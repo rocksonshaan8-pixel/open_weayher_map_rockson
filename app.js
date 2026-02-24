@@ -1,4 +1,5 @@
 // Step 1: Add your API key
+// Part 1: API Integration Completed
 const apiKey = "661f014a2a44fc5be5bd92162d577b29";
 
 // Step 2: Choose a city
