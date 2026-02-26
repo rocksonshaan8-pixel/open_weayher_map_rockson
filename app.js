@@ -1,73 +1,84 @@
-const apiKey = "661f014a2a44fc5be5bd92162d577b29";
 
-const weatherContainer = document.getElementById("weather-container");
-const searchBtn = document.getElementById("searchBtn");
-const cityInput = document.getElementById("cityInput");
-
-async function getWeather(city) {
-
-    if (!city) {
-        showError("Please enter a city name.");
-        return;
-    }
-
-    showLoading();
-    searchBtn.disabled = true;
-
-    try {
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
-
-        const response = await axios.get(url);
-        const data = response.data;
-
-        displayWeather(data);
-
-    } catch (error) {
-        showError("City not found. Please try again.");
-    }
-
-    searchBtn.disabled = false;
+function WeatherApp(apiKey) {
+    this.apiKey = apiKey;
+    this.baseURL = "https://api.openweathermap.org/data/2.5";
 }
 
-function displayWeather(data) {
-    weatherContainer.innerHTML = `
+WeatherApp.prototype.init = function () {
+    this.cityInput = document.getElementById("cityInput");
+    this.searchBtn = document.getElementById("searchBtn");
+    this.weatherContainer = document.getElementById("weather");
+    this.forecastContainer = document.getElementById("forecast");
+
+    this.searchBtn.addEventListener(
+        "click",
+        this.handleSearch.bind(this)
+    );
+};
+
+WeatherApp.prototype.handleSearch = function () {
+    const city = this.cityInput.value.trim();
+    if (!city) return;
+
+    this.fetchWeatherData(city);
+};
+
+WeatherApp.prototype.fetchWeatherData = function (city) {
+
+    const currentURL = `${this.baseURL}/weather?q=${city}&appid=${this.apiKey}&units=metric`;
+    const forecastURL = `${this.baseURL}/forecast?q=${city}&appid=${this.apiKey}&units=metric`;
+
+    Promise.all([
+        fetch(currentURL).then(response => response.json()),
+        fetch(forecastURL).then(response => response.json())
+    ])
+    .then(([currentData, forecastData]) => {
+        this.displayCurrentWeather(currentData);
+        this.displayForecast(forecastData);
+    })
+    .catch(error => {
+        console.error("Error fetching data:", error);
+    });
+};
+
+WeatherApp.prototype.displayCurrentWeather = function (data) {
+
+    this.weatherContainer.innerHTML = `
         <h2>${data.name}</h2>
-        <p>Temperature: ${data.main.temp} °C</p>
-        <p>${data.weather[0].description}</p>
-        <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png">
+        <p><strong>Temperature:</strong> ${data.main.temp}°C</p>
+        <p><strong>Condition:</strong> ${data.weather[0].description}</p>
+        <p><strong>Humidity:</strong> ${data.main.humidity}%</p>
     `;
-}
+};
 
-function showError(message) {
-    weatherContainer.innerHTML = `
-        <div class="error">
-            <p>${message}</p>
-        </div>
-    `;
-}
+WeatherApp.prototype.displayForecast = function (data) {
 
-function showLoading() {
-    weatherContainer.innerHTML = `
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading...</p>
-        </div>
-    `;
-}
+    const dailyData = data.list.filter(item =>
+        item.dt_txt.includes("12:00:00")
+    );
 
-// Button Click
-searchBtn.addEventListener("click", function () {
-    const city = cityInput.value.trim();
-    getWeather(city);
-    cityInput.value = "";
-});
+    this.forecastContainer.innerHTML = "";
 
-// Enter Key Support
-cityInput.addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-        searchBtn.click();
-    }
-});
+    dailyData.forEach(day => {
 
-// Initial Load
-getWeather("London");
+        const card = document.createElement("div");
+        card.classList.add("forecast-card");
+
+        const date = new Date(day.dt_txt).toDateString();
+        const temp = day.main.temp;
+        const desc = day.weather[0].description;
+        const icon = day.weather[0].icon;
+
+        card.innerHTML = `
+            <h4>${date}</h4>
+            <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="weather icon">
+            <p>${temp}°C</p>
+            <p>${desc}</p>
+        `;
+
+        this.forecastContainer.appendChild(card);
+    });
+};
+
+const app = new WeatherApp("661f014a2a44fc5be5bd92162d577b29");
+app.init();

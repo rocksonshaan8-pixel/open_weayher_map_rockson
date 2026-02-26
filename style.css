@@ -15,6 +15,62 @@ body {
 
 .search-box {
     margin-bottom: 20px;
+}body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #74ebd5, #ACB6E5);
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+.app-container {
+    padding: 30px;
+}
+
+.search-box {
+    margin-bottom: 20px;
+}
+
+input {
+    padding: 8px;
+    width: 200px;
+}
+
+button {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.current-weather {
+    margin: 20px 0;
+    font-size: 18px;
+}
+
+.forecast-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.forecast-card {
+    
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    width: 150px;
+    text-align: center;
+    color: #222;   /* 🔥 ADD THIS */
+}
+
+.forecast-card p,
+.forecast-card h4 {
+    color: #222;
+    margin: 6px 0;
+}
+.forecast-card img {
+    width: 60px;
 }
 
 #cityInput {

@@ -2,27 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyFetch</title>
+    <title>SkyFetch Weather Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="container">
-        <h1>SkyFetch Weather Dashboard</h1>
+    <div class="app-container">
+        <h1>SkyFetch Weather</h1>
 
-        <!-- Search Section -->
         <div class="search-box">
             <input type="text" id="cityInput" placeholder="Enter city name">
             <button id="searchBtn">Search</button>
         </div>
 
-        <!-- Weather Display -->
-        <div id="weather-container"></div>
+        <div id="weather" class="current-weather"></div>
+
+        <h2>5-Day Forecast</h2>
+        <div id="forecast" class="forecast-container"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="app.js"></script>
-
 </body>
 </html>
