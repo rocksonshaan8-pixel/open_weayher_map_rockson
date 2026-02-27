@@ -1,84 +1,91 @@
+const apiKey = "661f014a2a44fc5be5bd92162d577b29";
 
-function WeatherApp(apiKey) {
-    this.apiKey = apiKey;
-    this.baseURL = "https://api.openweathermap.org/data/2.5";
-}
+const searchBtn = document.getElementById("search-btn");
+const cityInput = document.getElementById("city-input");
+const weatherResult = document.getElementById("weather-result");
+const recentContainer = document.getElementById("recent-searches");
 
-WeatherApp.prototype.init = function () {
-    this.cityInput = document.getElementById("cityInput");
-    this.searchBtn = document.getElementById("searchBtn");
-    this.weatherContainer = document.getElementById("weather");
-    this.forecastContainer = document.getElementById("forecast");
-
-    this.searchBtn.addEventListener(
-        "click",
-        this.handleSearch.bind(this)
-    );
-};
-
-WeatherApp.prototype.handleSearch = function () {
-    const city = this.cityInput.value.trim();
+// Fetch weather function
+async function fetchWeather(city) {
     if (!city) return;
 
-    this.fetchWeatherData(city);
-};
+    try {
+        weatherResult.innerHTML = "Loading...";
 
-WeatherApp.prototype.fetchWeatherData = function (city) {
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
+        );
 
-    const currentURL = `${this.baseURL}/weather?q=${city}&appid=${this.apiKey}&units=metric`;
-    const forecastURL = `${this.baseURL}/forecast?q=${city}&appid=${this.apiKey}&units=metric`;
+        if (!response.ok) {
+            throw new Error("City not found");
+        }
 
-    Promise.all([
-        fetch(currentURL).then(response => response.json()),
-        fetch(forecastURL).then(response => response.json())
-    ])
-    .then(([currentData, forecastData]) => {
-        this.displayCurrentWeather(currentData);
-        this.displayForecast(forecastData);
-    })
-    .catch(error => {
-        console.error("Error fetching data:", error);
-    });
-};
+        const data = await response.json();
 
-WeatherApp.prototype.displayCurrentWeather = function (data) {
+        displayWeather(data);
+        saveRecentCity(city);
+        localStorage.setItem("lastCity", city);
 
-    this.weatherContainer.innerHTML = `
+    } catch (error) {
+        weatherResult.innerHTML = `<p style="color:red;">${error.message}</p>`;
+    }
+}
+
+// Display weather data
+function displayWeather(data) {
+    weatherResult.innerHTML = `
         <h2>${data.name}</h2>
-        <p><strong>Temperature:</strong> ${data.main.temp}°C</p>
-        <p><strong>Condition:</strong> ${data.weather[0].description}</p>
-        <p><strong>Humidity:</strong> ${data.main.humidity}%</p>
+        <p>Temperature: ${data.main.temp} °C</p>
+        <p>Weather: ${data.weather[0].description}</p>
+        <p>Humidity: ${data.main.humidity}%</p>
     `;
-};
+}
 
-WeatherApp.prototype.displayForecast = function (data) {
+// Save recent cities
+function saveRecentCity(city) {
+    let cities = JSON.parse(localStorage.getItem("recentCities")) || [];
 
-    const dailyData = data.list.filter(item =>
-        item.dt_txt.includes("12:00:00")
-    );
+    // Remove duplicate
+    cities = cities.filter(c => c.toLowerCase() !== city.toLowerCase());
 
-    this.forecastContainer.innerHTML = "";
+    cities.unshift(city);
 
-    dailyData.forEach(day => {
+    // Limit to 5
+    if (cities.length > 5) {
+        cities.pop();
+    }
 
-        const card = document.createElement("div");
-        card.classList.add("forecast-card");
+    localStorage.setItem("recentCities", JSON.stringify(cities));
+    renderRecentCities();
+}
 
-        const date = new Date(day.dt_txt).toDateString();
-        const temp = day.main.temp;
-        const desc = day.weather[0].description;
-        const icon = day.weather[0].icon;
+// Render recent buttons
+function renderRecentCities() {
+    recentContainer.innerHTML = "";
 
-        card.innerHTML = `
-            <h4>${date}</h4>
-            <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="weather icon">
-            <p>${temp}°C</p>
-            <p>${desc}</p>
-        `;
+    const cities = JSON.parse(localStorage.getItem("recentCities")) || [];
 
-        this.forecastContainer.appendChild(card);
+    cities.forEach(city => {
+        const btn = document.createElement("button");
+        btn.textContent = city;
+        btn.addEventListener("click", () => fetchWeather(city));
+        recentContainer.appendChild(btn);
     });
-};
+}
 
-const app = new WeatherApp("661f014a2a44fc5be5bd92162d577b29");
-app.init();
+// Search button click
+searchBtn.addEventListener("click", () => {
+    const city = cityInput.value.trim();
+    fetchWeather(city);
+    cityInput.value = "";
+});
+
+// Load last searched city on refresh
+document.addEventListener("DOMContentLoaded", () => {
+    renderRecentCities();
+
+    const lastCity = localStorage.getItem("lastCity");
+    if (lastCity) {
+        fetchWeather(lastCity);
+    }
+});
