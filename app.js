@@ -1,34 +1,91 @@
-// Step 1: Add your API key
 const apiKey = "661f014a2a44fc5be5bd92162d577b29";
 
-// Step 2: Choose a city
-const city = "London";
+const searchBtn = document.getElementById("search-btn");
+const cityInput = document.getElementById("city-input");
+const weatherResult = document.getElementById("weather-result");
+const recentContainer = document.getElementById("recent-searches");
 
-// Step 3: Create API URL
-const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+// Fetch weather function
+async function fetchWeather(city) {
+    if (!city) return;
 
-// Step 4: Fetch weather data
-axios.get(url)
-    .then(function (response) {
+    try {
+        weatherResult.innerHTML = "Loading...";
 
-        // Step 5: Get data from response
-        const data = response.data;
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
+        );
 
-        // Step 6: Update HTML elements
-        document.getElementById("city").textContent = data.name;
+        if (!response.ok) {
+            throw new Error("City not found");
+        }
 
-        document.getElementById("temperature").textContent =
-            "Temperature: " + data.main.temp + "°C";
+        const data = await response.json();
 
-        document.getElementById("description").textContent =
-            data.weather[0].description;
+        displayWeather(data);
+        saveRecentCity(city);
+        localStorage.setItem("lastCity", city);
 
-        const iconCode = data.weather[0].icon;
+    } catch (error) {
+        weatherResult.innerHTML = `<p style="color:red;">${error.message}</p>`;
+    }
+}
 
-        document.getElementById("icon").src =
-            `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+// Display weather data
+function displayWeather(data) {
+    weatherResult.innerHTML = `
+        <h2>${data.name}</h2>
+        <p>Temperature: ${data.main.temp} °C</p>
+        <p>Weather: ${data.weather[0].description}</p>
+        <p>Humidity: ${data.main.humidity}%</p>
+    `;
+}
 
-    })
-    .catch(function (error) {
-        console.log("Error:", error);
+// Save recent cities
+function saveRecentCity(city) {
+    let cities = JSON.parse(localStorage.getItem("recentCities")) || [];
+
+    // Remove duplicate
+    cities = cities.filter(c => c.toLowerCase() !== city.toLowerCase());
+
+    cities.unshift(city);
+
+    // Limit to 5
+    if (cities.length > 5) {
+        cities.pop();
+    }
+
+    localStorage.setItem("recentCities", JSON.stringify(cities));
+    renderRecentCities();
+}
+
+// Render recent buttons
+function renderRecentCities() {
+    recentContainer.innerHTML = "";
+
+    const cities = JSON.parse(localStorage.getItem("recentCities")) || [];
+
+    cities.forEach(city => {
+        const btn = document.createElement("button");
+        btn.textContent = city;
+        btn.addEventListener("click", () => fetchWeather(city));
+        recentContainer.appendChild(btn);
     });
+}
+
+// Search button click
+searchBtn.addEventListener("click", () => {
+    const city = cityInput.value.trim();
+    fetchWeather(city);
+    cityInput.value = "";
+});
+
+// Load last searched city on refresh
+document.addEventListener("DOMContentLoaded", () => {
+    renderRecentCities();
+
+    const lastCity = localStorage.getItem("lastCity");
+    if (lastCity) {
+        fetchWeather(lastCity);
+    }
+});
